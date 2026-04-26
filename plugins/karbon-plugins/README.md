@@ -14,7 +14,7 @@ This plugin is distributed through the Karbon marketplace. To install:
 ```
 
 ## Skills
-Skills will be listed here as they are added. The plugin is currently in initial scaffolding.
+- **`firm-ai-strategy`** — Conducts a structured advisor-style interview with an accounting firm owner or partner and produces a written, defensible AI strategy document (`.docx`). Triggers on prompts like "build our AI strategy", "draft an AI policy", or "where do we start with AI".
 
 ## How skills work
 Each skill lives in its own folder under `skills/` with a `SKILL.md` file. Claude loads the skill automatically when your prompt matches its description. Skills inside this plugin are namespaced as `/karbon-plugins:skill-name`.
