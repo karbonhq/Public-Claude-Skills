@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "karbon-plugins",
+  "owner": {
+    "name": "Karbon",
+    "email": "byron.patrick@karbonhq.com"
+  },
+  "metadata": {
+    "description": "Karbon's curated Claude Code plugins for accounting firms.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "karbon-plugins",
+      "source": "./plugins/karbon-plugins",
+      "description": "A curated set of Claude skills built by Karbon for accounting firms — strategy, SOPs, advisory prep, and more.",
+      "version": "0.1.0",
+      "category": "productivity",
+      "author": {
+        "name": "Karbon",
+        "email": "byron.patrick@karbonhq.com"
+      }
+    }
+  ]
+}
