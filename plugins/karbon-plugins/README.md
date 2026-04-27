@@ -1,4 +1,4 @@
-# Karbon Plugins
+# Karbon Claude Plugins
 
 A curated set of Claude skills built by Karbon for accounting firms.
 
