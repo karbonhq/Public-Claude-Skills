@@ -10,7 +10,7 @@ In Claude Code:
 
 ```
 /plugin marketplace add karbonhq/public-claude-skills
-/plugin install karbon-plugins@karbon-plugins
+/plugin install karbon-claude-plugins@karbon-claude-plugins
 ```
 
 After installing, run `/reload-plugins` and Claude will load the skills automatically when your prompt matches.

@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "karbon-claude-plugins",
-      "source": "./plugins/karbon-plugins",
+      "source": "./plugins/karbon-claude-plugins",
       "description": "A curated set of Claude skills built by Karbon for accounting firms. Free to the profession.",
       "version": "0.3.0",
       "category": "productivity",
