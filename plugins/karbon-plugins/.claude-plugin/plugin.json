@@ -1,7 +1,7 @@
 {
   "name": "karbon-plugins",
   "description": "A curated set of Claude skills built by Karbon for accounting firms. Free to the profession.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Karbon",
     "email": "byron.patrick@karbonhq.com"
