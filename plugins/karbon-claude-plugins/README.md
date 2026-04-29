@@ -15,7 +15,7 @@ This plugin is distributed through the Karbon marketplace. To install:
 
 ## Skills
 - **`firm-ai-strategy`** — Conducts a structured advisor-style interview with an accounting firm owner or partner and produces a written, defensible AI strategy document (`.docx`). Triggers on prompts like "build our AI strategy", "draft an AI policy", or "where do we start with AI".
-- **`sop-architect`** — Reviews, organizes, and fills gaps in an accounting/bookkeeping/CAS firm's standard operating procedures. Builds an SOP inventory across 16 domains, identifies gaps, prioritizes what to document next, and writes new SOPs through a guided interview. Triggers on prompts like "review my SOPs", "audit our SOPs", "find gaps in my SOPs", or "interview me to write an SOP".
+- **`sop-library-auditor`** — Audits, organizes, scores, and fills gaps in an accounting/bookkeeping/CAS firm's existing SOP library. Produces an interactive HTML coverage report with a 16-domain heatmap, a written gap report, a reorganized library folder, and interview-driven captures for missing SOPs. Triggers on prompts like "audit our SOPs", "review our procedures", "find SOP gaps", "score our SOP coverage", or when a firm hands over an existing folder of SOPs.
 
 ## How skills work
 Each skill lives in its own folder under `skills/` with a `SKILL.md` file. Claude loads the skill automatically when your prompt matches its description. Skills inside this plugin are namespaced as `/karbon-claude-plugins:skill-name`.

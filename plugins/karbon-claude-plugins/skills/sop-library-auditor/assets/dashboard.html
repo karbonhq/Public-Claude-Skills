@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SOP Coverage Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #161a22; --panel-2: #1d2330;
+    --ink: #e7ecf3; --ink-2: #aab4c2; --muted: #6f7a8c;
+    --line: #2a3142;
+    --green: #2f9e57; --green-dim: #1f6b3c;
+    --yellow: #d6a23a; --yellow-dim: #8a6620;
+    --red: #d04646; --red-dim: #7a2424;
+    --grey: #4b5363;
+    --accent: #6aa9f4; --accent-2: #b58df0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  header.bar { padding: 18px 28px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 28px; background: linear-gradient(180deg, #1a2030 0%, #141822 100%); }
+  header.bar h1 { font-size: 20px; margin: 0; }
+  header.bar .meta { color: var(--ink-2); font-size: 13px; }
+  header.bar .meta b { color: var(--ink); }
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; }
+  h2 { font-size: 16px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-2); margin: 32px 0 12px; font-weight: 600; }
+  h3 { font-size: 15px; margin: 12px 0 8px; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .stat .label { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.4px; }
+  .stat .value { font-size: 22px; font-weight: 600; margin-top: 2px; }
+  .stat.ok .value { color: var(--green); }
+  .stat.warn .value { color: var(--yellow); }
+  .stat.bad .value { color: var(--red); }
+  .heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-top: 8px; }
+  @media (max-width: 900px) { .heatmap { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 520px) { .heatmap { grid-template-columns: repeat(2, 1fr); } }
+  .cell { border: 1px solid var(--line); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--panel); position: relative; transition: transform 0.08s, border-color 0.12s; min-height: 92px; }
+  .cell:hover { transform: translateY(-1px); border-color: var(--accent); }
+  .cell .num { font-size: 11px; color: var(--ink-2); }
+  .cell .name { font-size: 13px; font-weight: 600; margin-top: 2px; line-height: 1.3; }
+  .cell .layer { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .cell .badge { position: absolute; right: 10px; top: 10px; width: 12px; height: 12px; border-radius: 50%; }
+  .cell.complete { border-color: var(--green-dim); }
+  .cell.complete .badge { background: var(--green); }
+  .cell.partial { border-color: var(--yellow-dim); }
+  .cell.partial .badge { background: var(--yellow); }
+  .cell.missing { border-color: var(--red-dim); }
+  .cell.missing .badge { background: var(--red); box-shadow: 0 0 0 4px rgba(208,70,70,0.18); }
+  .cell.na { opacity: 0.55; }
+  .cell.na .badge { background: var(--grey); }
+  .cell.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(106,169,244,0.2); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 10px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .legend .lg-c::before { background: var(--green); }
+  .legend .lg-p::before { background: var(--yellow); }
+  .legend .lg-m::before { background: var(--red); }
+  .legend .lg-n::before { background: var(--grey); }
+  #detail { margin-top: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-height: 120px; }
+  #detail h3 { margin-top: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; margin-left: 8px; }
+  .pill.complete { background: var(--green-dim); color: #d6f0e0; }
+  .pill.partial { background: var(--yellow-dim); color: #f6e3b8; }
+  .pill.missing { background: var(--red-dim); color: #f4cccc; }
+  .pill.na { background: var(--grey); color: #d4d8de; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  td.tier { white-space: nowrap; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); margin-right: 4px; }
+  .tag.draft { background: #2a2a16; border-color: #5a5320; color: #ecd58c; }
+  .tag.stale { background: #2a1816; border-color: #6a322a; color: #efb6a8; }
+  .tag.dup { background: #1d1f2c; border-color: #3a3f60; color: #b8bcd6; }
+  .tag.orphan { background: #1a2a1c; border-color: #2f5a36; color: #b8e0bf; }
+  .tag.scope { background: #2a2530; border-color: #5a3f6a; color: #d8b8ec; }
+  .tag.crit { background: #3a1414; border-color: #7a2424; color: #ffd0cc; }
+  .sop-link { color: var(--accent); cursor: pointer; text-decoration: none; font-weight: 600; }
+  .sop-link:hover { text-decoration: underline; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 10px; }
+  .filter-btn { background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .filter-btn.on { background: var(--accent); color: #0b1118; border-color: var(--accent); }
+  .filter-btn:hover { color: var(--ink); }
+  .composite { font-weight: 600; }
+  .composite-bar { display: inline-block; width: 60px; height: 6px; background: var(--panel-2); border-radius: 3px; vertical-align: middle; margin-left: 8px; }
+  .composite-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .anatomy-grid { display: grid; grid-template-columns: 1.6fr repeat(15, 1fr) 0.6fr; gap: 2px; margin-top: 8px; font-size: 11px; min-width: 980px; }
+  .anatomy-grid .h { color: var(--ink-2); padding: 4px 5px; font-weight: 600; }
+  .anatomy-grid .n { padding: 4px 5px; border-bottom: 1px solid var(--line); }
+  .anatomy-grid .c { text-align: center; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .anatomy-grid .n.clickable { cursor: pointer; color: var(--accent); }
+  .a-yes { color: var(--green); }
+  .a-part { color: var(--yellow); }
+  .a-no { color: var(--red); opacity: 0.7; }
+  .anatomy-grid .total { text-align: right; font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .scroll-x { overflow-x: auto; }
+  details { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; margin-top: 8px; }
+  details > summary { cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; }
+  details[open] > summary { color: var(--ink); }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(8,10,16,0.78); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { margin-top: 0; }
+  .modal .close-x { float: right; cursor: pointer; color: var(--ink-2); background: transparent; border: 0; font-size: 20px; padding: 0; }
+  .modal .close-x:hover { color: var(--ink); }
+  .footer-note { margin-top: 36px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .recommend-box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+  .recommend-box .lead { color: var(--accent-2); font-weight: 600; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1 id="report-title">SOP Coverage Report</h1>
+  <div class="meta">Generated <b id="generated-date">-</b></div>
+  <div class="meta">Documents inventoried <b id="docs-inventoried">-</b></div>
+  <div class="meta">Procedural SOPs <b id="procedural-sops">-</b></div>
+  <div class="meta">Drafts unfinalized <b id="drafts-unfinalized">-</b></div>
+  <div class="meta" id="overall-coverage-meta">Overall coverage <b>-</b></div>
+</header>
+<div class="container">
+  <h2>At a glance</h2>
+  <div class="summary" id="summary"></div>
+  <h2>Coverage heatmap - click a domain</h2>
+  <div class="legend">
+    <span class="lg-c">Complete</span><span class="lg-p">Partial</span>
+    <span class="lg-m">Missing</span><span class="lg-n">N/A</span>
+  </div>
+  <div id="heatmap" class="heatmap"></div>
+  <div id="detail">
+    <p style="color: var(--ink-2); margin: 0;">Select a domain above to see SOPs mapped to it, anatomy completeness, and identified gaps.</p>
+  </div>
+  <h2>Prioritized gaps - filter the list</h2>
+  <div class="filters" id="filters">
+    <button class="filter-btn on" data-filter="all">All gaps</button>
+    <button class="filter-btn" data-filter="30-day">30-day</button>
+    <button class="filter-btn" data-filter="60-day">60-day</button>
+    <button class="filter-btn" data-filter="90-day">90-day</button>
+    <button class="filter-btn" data-filter="180-day">180-day</button>
+    <button class="filter-btn" data-filter="risk-high">High risk only</button>
+    <button class="filter-btn" data-filter="effort-low">Low effort only</button>
+    <button class="filter-btn" data-filter="compliance">Compliance floor</button>
+  </div>
+  <div class="scroll-x">
+    <table id="gap-table">
+      <thead><tr><th>#</th><th>Gap (SOP)</th><th>Domain</th><th>Tier</th><th>Risk</th><th>Freq</th><th>Impact</th><th>Effort</th><th>Composite</th><th>Bucket</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <h2>15-field anatomy completeness - per SOP</h2>
+  <p style="color: var(--ink-2); font-size: 13px; margin-top: 0;">Click any SOP name to see its 5-axis maturity drill-down (Existence / Currency / Coverage / AI-readiness / Adoption).</p>
+  <div class="scroll-x"><div id="anatomy" class="anatomy-grid"></div></div>
+  <details>
+    <summary>What the 15 fields are</summary>
+    <ol style="color: var(--ink-2); font-size: 13px; line-height: 1.6;">
+      <li>Title and ID</li><li>Purpose</li><li>Scope (and exclusions)</li>
+      <li>Owner (Accountable)</li><li>Performers (RACI)</li><li>Frequency / trigger</li>
+      <li>Inputs</li><li>Outputs</li><li>Step-by-step procedure</li>
+      <li>Controls (with materiality thresholds)</li><li>Exceptions and escalation</li>
+      <li>Tools, templates, prompts</li><li>Authority / standard references</li>
+      <li>Review cadence and change log</li><li>AI usage (model, prompts, prohibitions, checkpoints)</li>
+    </ol>
+  </details>
+  <h2>Recommended starting point</h2>
+  <div class="recommend-box">
+    <p><span class="lead" id="recommend-lead">-</span></p>
+    <p style="color: var(--ink-2);" id="recommend-body">-</p>
+    <p style="color: var(--ink-2); margin-bottom: 0;" id="recommend-quickwin"></p>
+  </div>
+  <p class="footer-note" id="footer-note">Self-contained report - open any time without internet.</p>
+</div>
+<div class="modal-bg" id="axis-modal-bg">
+  <div class="modal">
+    <button class="close-x" id="axis-modal-close" aria-label="Close">&times;</button>
+    <h3 id="axis-modal-title">5-axis maturity</h3>
+    <p style="color: var(--ink-2); font-size: 13px;" id="axis-modal-subtitle"></p>
+    <div style="position: relative; height: 280px;"><canvas id="axis-radar"></canvas></div>
+    <table style="margin-top: 16px;">
+      <thead><tr><th>Axis</th><th style="text-align:right;">Score (0-2)</th><th>What that means</th></tr></thead>
+      <tbody id="axis-modal-table"></tbody>
+    </table>
+    <p style="color: var(--muted); font-size: 11px; margin-top: 12px;">The 5-axis score is a secondary diagnostic view. Headline coverage status (Complete / Partial / Missing) is the primary signal.</p>
+  </div>
+</div>
+<script>
+const DATA = /*__SOP_DATA_PLACEHOLDER__*/ {
+  "firm_name": "Sample Firm CPAs",
+  "scoring_date": "2026-04-29",
+  "stats": { "documents_inventoried": 19, "procedural_sops": 13, "drafts_unfinalized": 3, "complete": 1, "partial": 7, "missing": 8, "na": 0, "critical_compliance_gaps": 3, "stuck_in_draft": 3, "stale_over_12mo": 7 },
+  "domains": [
+    {"num":1,"name":"Client lifecycle","layer":"Value chain","status":"partial","note":"Onboarding + engagement letter stuck in Drafts.","sop_ids":["S9","S12"]},
+    {"num":2,"name":"Document & data collection","layer":"Value chain","status":"missing","note":"No PBC SOP.","sop_ids":[]},
+    {"num":3,"name":"Pricing & billing","layer":"Value chain","status":"missing","note":"No standalone SOP.","sop_ids":[]},
+    {"num":4,"name":"Transaction processing","layer":"Production","status":"partial","note":"AP current; vendor master weak.","sop_ids":["S5"]},
+    {"num":5,"name":"Reconciliations","layer":"Production","status":"complete","note":"Bank Rec is the strongest SOP.","sop_ids":["S5"]},
+    {"num":6,"name":"Period-end close","layer":"Production","status":"partial","note":"Forwards to deprecated checklist.","sop_ids":["S6"]},
+    {"num":7,"name":"Financial reporting","layer":"Production","status":"partial","note":"Reporting incomplete.","sop_ids":["S7"]},
+    {"num":8,"name":"Payroll & sales tax","layer":"Production","status":"partial","note":"Sales Tax stale; no Payroll SOP.","sop_ids":["S10"]},
+    {"num":9,"name":"Advisory & CAS","layer":"Production","status":"missing","note":"No SOP.","sop_ids":[]},
+    {"num":10,"name":"QC & review","layer":"Quality","status":"missing","note":"Reviewer checklist deprecated.","sop_ids":[]},
+    {"num":11,"name":"Workflow & practice mgmt","layer":"Quality","status":"missing","note":"No Karbon SOP.","sop_ids":[]},
+    {"num":12,"name":"Tech stack & integrations","layer":"Enablement","status":"partial","note":"Inventory only; integrations undocumented.","sop_ids":["S8"]},
+    {"num":13,"name":"People, training & RACI","layer":"Enablement","status":"missing","note":"No role descriptions or RACI.","sop_ids":[]},
+    {"num":14,"name":"Internal firm operations","layer":"Enablement","status":"partial","note":"Stale firm overview; no DR.","sop_ids":["S3"]},
+    {"num":15,"name":"Risk, compliance & security","layer":"Governance","status":"missing","note":"CRITICAL - no WISP.","sop_ids":["S14"]},
+    {"num":16,"name":"AI & agentic workflows","layer":"Governance","status":"missing","note":"No AI policy.","sop_ids":[]}
+  ],
+  "sops": {
+    "S3":{"title":"Firm Overview","path":"root/Firm Overview.docx","modified":"2022-11-19","anatomy":[2,1,1,0,1,0,0,0,0,0,0,0,0,1,0],"five_axis":{"existence":2,"currency":0,"coverage":1,"ai_readiness":0,"adoption":1},"flags":["stale"]},
+    "S5":{"title":"Bookkeeping Procedures Manual","path":"root/Bookkeeping Procedures Manual.docx","modified":"2024","anatomy":[2,2,2,1,1,2,2,1,2,2,2,2,0,1,0],"five_axis":{"existence":2,"currency":2,"coverage":2,"ai_readiness":0,"adoption":2},"flags":["scope","dup"]},
+    "S6":{"title":"Monthly Close Process","path":"root/Monthly Close Process.docx","modified":"2024-03","anatomy":[2,2,2,1,1,2,2,2,2,2,1,2,0,1,0],"five_axis":{"existence":2,"currency":2,"coverage":2,"ai_readiness":0,"adoption":1},"flags":["stale-risk"]},
+    "S7":{"title":"Reporting & Deliverables","path":"root/Reporting & Deliverables.docx","modified":"2024","anatomy":[2,2,2,0,0,2,1,2,1,1,0,1,0,0,0],"five_axis":{"existence":1,"currency":2,"coverage":1,"ai_readiness":0,"adoption":0},"flags":["draft"]},
+    "S8":{"title":"Tech Stack","path":"root/Tech Stack.docx","modified":"2024-09","anatomy":[2,2,2,1,0,0,1,2,1,1,1,2,0,1,0],"five_axis":{"existence":2,"currency":2,"coverage":1,"ai_readiness":1,"adoption":1},"flags":[]},
+    "S9":{"title":"Client Communication","path":"root/Client Communication.pdf","modified":"2022","anatomy":[2,2,2,0,1,2,0,1,2,1,2,2,0,0,0],"five_axis":{"existence":2,"currency":0,"coverage":2,"ai_readiness":0,"adoption":0},"flags":["stale"]},
+    "S10":{"title":"Sales Tax Procedures","path":"root/Sales Tax Procedures.pdf","modified":"2023-03","anatomy":[2,2,2,0,0,2,1,1,2,1,2,2,0,0,0],"five_axis":{"existence":2,"currency":1,"coverage":2,"ai_readiness":0,"adoption":1},"flags":["stale"]},
+    "S12":{"title":"Engagement Letter - DRAFT","path":"Drafts/Engagement Letter.docx","modified":"2024-07","anatomy":[2,2,2,1,0,2,0,2,1,2,1,1,1,0,0],"five_axis":{"existence":1,"currency":2,"coverage":1,"ai_readiness":1,"adoption":0},"flags":["draft"]},
+    "S14":{"title":"Security Plan - OUTLINE","path":"Drafts/Security Plan.docx","modified":"2024-09","anatomy":[2,2,1,1,0,0,0,0,0,1,0,1,2,0,0],"five_axis":{"existence":1,"currency":2,"coverage":0,"ai_readiness":0,"adoption":0},"flags":["draft","crit"]}
+  },
+  "gaps": [
+    {"id":"G1","name":"WISP / Information Security Program","domain":15,"tier":1,"risk":3,"freq":3,"impact":3,"effort":1,"compliance_floor":true,"bucket":"30-day"},
+    {"id":"G2","name":"AI Usage Policy + Approved Tools List","domain":16,"tier":1,"risk":3,"freq":3,"impact":3,"effort":2,"compliance_floor":true,"bucket":"30-day"},
+    {"id":"G3","name":"Quality Control / Reviewer Checklist","domain":10,"tier":4,"risk":3,"freq":3,"impact":3,"effort":2,"compliance_floor":false,"bucket":"30-day"},
+    {"id":"G4","name":"Year-End & 1099 SOP - $2,000 TY2026 threshold","domain":8,"tier":1,"risk":3,"freq":1,"impact":3,"effort":3,"compliance_floor":true,"bucket":"30-day"},
+    {"id":"G5","name":"Engagement Letter SOP","domain":1,"tier":1,"risk":3,"freq":2,"impact":3,"effort":2,"compliance_floor":false,"bucket":"30-day"},
+    {"id":"G6","name":"Incident Response / Breach Notification Plan","domain":15,"tier":1,"risk":3,"freq":1,"impact":3,"effort":2,"compliance_floor":true,"bucket":"60-day"},
+    {"id":"G7","name":"Karbon Workflow SOP","domain":11,"tier":4,"risk":2,"freq":3,"impact":3,"effort":2,"compliance_floor":false,"bucket":"60-day"},
+    {"id":"G8","name":"Vendor Master / 1099 Hygiene SOP","domain":4,"tier":3,"risk":2,"freq":3,"impact":2,"effort":3,"compliance_floor":false,"bucket":"60-day"},
+    {"id":"G9","name":"Document Collection / PBC SOP","domain":2,"tier":3,"risk":2,"freq":3,"impact":3,"effort":2,"compliance_floor":false,"bucket":"60-day"},
+    {"id":"G10","name":"Payroll Processing SOP","domain":8,"tier":3,"risk":2,"freq":2,"impact":3,"effort":2,"compliance_floor":false,"bucket":"90-day"},
+    {"id":"G11","name":"Section 7216 Consent Procedure","domain":15,"tier":1,"risk":3,"freq":1,"impact":2,"effort":3,"compliance_floor":true,"bucket":"90-day"},
+    {"id":"G12","name":"Pricing & Tier Definitions SOP","domain":3,"tier":2,"risk":2,"freq":1,"impact":3,"effort":2,"compliance_floor":false,"bucket":"90-day"},
+    {"id":"G13","name":"Backup + DR SOP + Annual Tabletop","domain":14,"tier":6,"risk":3,"freq":1,"impact":3,"effort":2,"compliance_floor":false,"bucket":"180-day"},
+    {"id":"G14","name":"Succession Plan","domain":14,"tier":6,"risk":2,"freq":1,"impact":3,"effort":1,"compliance_floor":false,"bucket":"180-day"}
+  ],
+  "recommendation": {
+    "lead": "Start with Domain 16 - AI Usage Policy + Approved Tools List + Prompt Library governance.",
+    "body": "Highest composite score, real and growing regulatory exposure, and it unblocks three other 30/60-day gaps - engagement-letter consent, Section 7216 third-party sharing, and onboarding AI-consent disclosure.",
+    "quickwin": "Update the Year-End & 1099 SOP for the OBBBA $2,000 TY2026 threshold. Fixed deadline, small effort, real dollar exposure."
+  },
+  "footer_note": "Source files: firm's working folder. Working copies: <code>working/sop-inventory.json</code> and <code>SOP-Library/_index.md</code>. This page is self-contained - open it any time without internet."
+};
+
+const FIELD_NAMES = ["1.Title","2.Purpose","3.Scope","4.Owner","5.RACI","6.Freq","7.Inputs","8.Outputs","9.Procedure","10.Controls","11.Exceptions","12.Tools","13.Authority","14.Review","15.AI"];
+const AXIS_NAMES = ["Existence","Currency","Coverage","AI-readiness","Adoption"];
+const AXIS_HELP = {
+  "Existence":"0 none / 1 informal / 2 formal document",
+  "Currency":"0 >24 months or unknown / 1 12-24 months / 2 within 12 months",
+  "Coverage":"0 narrative only / 1 some structure / 2 full structure",
+  "AI-readiness":"0 no metadata / 1 some / 2 SKILL.md-loadable",
+  "Adoption":"0 shelfware / 1 sometimes / 2 always-used"
+};
+function labelStatus(s) { return ({complete:"Complete",partial:"Partial",missing:"Missing",na:"N/A"})[s] || s; }
+
+const stats = DATA.stats;
+const inScope = stats.complete + stats.partial + stats.missing;
+const coveragePct = inScope === 0 ? 0 : Math.round(stats.complete / inScope * 100);
+document.getElementById("report-title").textContent = DATA.firm_name + " - SOP Coverage Report";
+document.getElementById("generated-date").textContent = DATA.scoring_date;
+document.getElementById("docs-inventoried").textContent = stats.documents_inventoried;
+document.getElementById("procedural-sops").textContent = stats.procedural_sops;
+document.getElementById("drafts-unfinalized").textContent = stats.drafts_unfinalized;
+document.getElementById("overall-coverage-meta").innerHTML = "Overall coverage <b>~" + coveragePct + "%</b> (" + stats.complete + " complete / " + stats.partial + " partial / " + stats.missing + " missing)";
+
+const summaryEl = document.getElementById("summary");
+[
+  {cls:"ok",label:"Complete domains",value:stats.complete},
+  {cls:"warn",label:"Partial domains",value:stats.partial},
+  {cls:"bad",label:"Missing domains",value:stats.missing},
+  {cls:"bad",label:"Critical compliance gaps",value:stats.critical_compliance_gaps},
+  {cls:"warn",label:"Stuck-in-draft",value:stats.stuck_in_draft},
+  {cls:"warn",label:"Stale (>12 mo)",value:stats.stale_over_12mo}
+].forEach(s => {
+  const div = document.createElement("div");
+  div.className = "stat " + s.cls;
+  div.innerHTML = "<div class='label'>" + s.label + "</div><div class='value'>" + s.value + "</div>";
+  summaryEl.appendChild(div);
+});
+
+const heatmapEl = document.getElementById("heatmap");
+DATA.domains.forEach(d => {
+  const div = document.createElement("div");
+  div.className = "cell " + d.status;
+  div.dataset.num = d.num;
+  div.innerHTML = "<div class='badge'></div><div class='num'>Domain " + d.num + "</div><div class='name'>" + d.name + "</div><div class='layer'>" + d.layer + "</div>";
+  div.addEventListener("click", () => selectDomain(d.num));
+  heatmapEl.appendChild(div);
+});
+
+function selectDomain(num) {
+  document.querySelectorAll(".cell").forEach(c => c.classList.toggle("active", Number(c.dataset.num) === num));
+  const d = DATA.domains.find(x => x.num === num);
+  if (!d) return;
+  const flagMap = {"draft":"draft","stale":"stale","stale-risk":"stale","dup":"duplicate","orphan":"orphan","scope":"scope-mismatch","crit":"critical"};
+  const flagCls = {"draft":"draft","stale":"stale","stale-risk":"stale","dup":"dup","orphan":"orphan","scope":"scope","crit":"crit"};
+  const sopRows = (d.sop_ids || []).map(id => {
+    const s = DATA.sops[id];
+    if (!s) return "";
+    const tags = (s.flags || []).map(f => "<span class='tag " + (flagCls[f]||"") + "'>" + (flagMap[f]||f) + "</span>").join("");
+    const total = s.anatomy ? s.anatomy.reduce((a,b) => a + (b||0), 0) : null;
+    return "<tr><td><span class='sop-link' data-sopid='" + id + "'>" + s.title + "</span><br><span style='color:var(--muted); font-size:11px;'>" + s.path + "</span></td><td>" + s.modified + "</td><td>" + (total === null ? "-" : total + "/30") + "</td><td>" + tags + "</td></tr>";
+  }).join("");
+  const gapsHere = DATA.gaps.filter(g => g.domain === num);
+  const gapRows = gapsHere.map(g => {
+    const comp = g.risk + g.freq + g.impact + g.effort;
+    return "<tr><td>" + g.id + "</td><td>" + (g.compliance_floor ? "&#9873; " : "") + g.name + "</td><td>Tier " + g.tier + "</td><td>" + g.bucket + "</td><td class='composite'>" + comp + "<span class='composite-bar'><span style='width:" + (comp/12*100) + "%'></span></span></td></tr>";
+  }).join("");
+  const sopBlock = (d.sop_ids && d.sop_ids.length) ? "<h3>SOPs mapped to this domain</h3><table><thead><tr><th>SOP</th><th>Last modified</th><th>Anatomy</th><th>Flags</th></tr></thead><tbody>" + sopRows + "</tbody></table>" : "<p style='color: var(--ink-2); margin-top: 14px;'>No SOP currently mapped here.</p>";
+  const gapBlock = gapsHere.length ? "<h3 style='margin-top:18px;'>Identified gaps in this domain</h3><table><thead><tr><th>#</th><th>Gap</th><th>Tier</th><th>Bucket</th><th>Composite</th></tr></thead><tbody>" + gapRows + "</tbody></table>" : "<p style='color: var(--ink-2); margin-top: 14px;'>No specific gaps queued for this domain.</p>";
+  document.getElementById("detail").innerHTML = "<h3>Domain " + d.num + " - " + d.name + " <span class='pill " + d.status + "'>" + labelStatus(d.status) + "</span> <span style='color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;'>" + d.layer + "</span></h3><p style='color: var(--ink-2);'>" + d.note + "</p>" + sopBlock + gapBlock;
+  document.querySelectorAll(".sop-link").forEach(el => el.addEventListener("click", () => openAxisModal(el.dataset.sopid)));
+}
+
+const gapBody = document.querySelector("#gap-table tbody");
+function renderGaps(filter) {
+  let rows = DATA.gaps.slice();
+  if (filter === "30-day") rows = rows.filter(g => g.bucket === "30-day");
+  else if (filter === "60-day") rows = rows.filter(g => g.bucket === "60-day");
+  else if (filter === "90-day") rows = rows.filter(g => g.bucket === "90-day");
+  else if (filter === "180-day") rows = rows.filter(g => g.bucket === "180-day");
+  else if (filter === "risk-high") rows = rows.filter(g => g.risk === 3);
+  else if (filter === "effort-low") rows = rows.filter(g => g.effort === 3);
+  else if (filter === "compliance") rows = rows.filter(g => g.compliance_floor);
+  rows.sort((a, b) => {
+    const order = {"30-day":0,"60-day":1,"90-day":2,"180-day":3};
+    return (order[a.bucket]-order[b.bucket]) || ((b.risk+b.freq+b.impact+b.effort)-(a.risk+a.freq+a.impact+a.effort));
+  });
+  gapBody.innerHTML = rows.map(g => {
+    const comp = g.risk + g.freq + g.impact + g.effort;
+    const dom = DATA.domains.find(d => d.num === g.domain);
+    return "<tr><td>" + g.id + "</td><td>" + (g.compliance_floor ? "&#9873; " : "") + g.name + "</td><td><a href='#' data-domain='" + g.domain + "' class='dom-link'>" + g.domain + " - " + (dom ? dom.name : "") + "</a></td><td class='tier'>Tier " + g.tier + "</td><td>" + g.risk + "</td><td>" + g.freq + "</td><td>" + g.impact + "</td><td>" + g.effort + "</td><td class='composite'>" + comp + "<span class='composite-bar'><span style='width:" + (comp/12*100) + "%'></span></span></td><td>" + g.bucket + "</td></tr>";
+  }).join("");
+  document.querySelectorAll("a.dom-link").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    selectDomain(Number(a.dataset.domain));
+    document.getElementById("detail").scrollIntoView({behavior:"smooth", block:"start"});
+  }));
+}
+renderGaps("all");
+document.getElementById("filters").addEventListener("click", e => {
+  const btn = e.target.closest(".filter-btn");
+  if (!btn) return;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.toggle("on", b === btn));
+  renderGaps(btn.dataset.filter);
+});
+
+const anatomyEl = document.getElementById("anatomy");
+const head = ["<div class='h'>SOP</div>", ...FIELD_NAMES.map(n => "<div class='h' style='text-align:center;'>" + n + "</div>"), "<div class='h' style='text-align:right;'>Total</div>"].join("");
+let body = "";
+Object.entries(DATA.sops).forEach(([id, s]) => {
+  if (!s.anatomy) return;
+  const cells = s.anatomy.map(v => v === 2 ? "<div class='c a-yes'>&#9679;</div>" : v === 1 ? "<div class='c a-part'>&#9680;</div>" : "<div class='c a-no'>&#9675;</div>").join("");
+  const total = s.anatomy.reduce((a, b) => a + (b||0), 0);
+  body += "<div class='n clickable' data-sopid='" + id + "'>" + s.title + "</div>" + cells + "<div class='total'>" + total + "/30</div>";
+});
+anatomyEl.innerHTML = head + body;
+anatomyEl.querySelectorAll(".n.clickable").forEach(el => el.addEventListener("click", () => openAxisModal(el.dataset.sopid)));
+
+let axisChart = null;
+function openAxisModal(sopId) {
+  const s = DATA.sops[sopId];
+  if (!s) return;
+  const ax = s.five_axis || {existence:0,currency:0,coverage:0,ai_readiness:0,adoption:0};
+  document.getElementById("axis-modal-title").textContent = s.title;
+  const total = ax.existence + ax.currency + ax.coverage + ax.ai_readiness + ax.adoption;
+  document.getElementById("axis-modal-subtitle").textContent = "5-axis maturity score: " + total + "/10 - " + (total < 4 ? "Crisis" : total < 7 ? "Baseline" : total < 9 ? "Mature" : "AI-Native");
+  const tableBody = document.getElementById("axis-modal-table");
+  const axesArr = [
+    {name:"Existence", val: ax.existence},
+    {name:"Currency", val: ax.currency},
+    {name:"Coverage", val: ax.coverage},
+    {name:"AI-readiness", val: ax.ai_readiness},
+    {name:"Adoption", val: ax.adoption}
+  ];
+  tableBody.innerHTML = axesArr.map(a => "<tr><td>" + a.name + "</td><td style='text-align:right;'>" + a.val + "/2</td><td style='color:var(--ink-2); font-size:12px;'>" + AXIS_HELP[a.name] + "</td></tr>").join("");
+  if (axisChart) axisChart.destroy();
+  axisChart = new Chart(document.getElementById("axis-radar").getContext("2d"), {
+    type: "radar",
+    data: { labels: AXIS_NAMES, datasets: [{ label: "Score", data: axesArr.map(a => a.val), backgroundColor: "rgba(106, 169, 244, 0.18)", borderColor: "rgba(106, 169, 244, 1)", borderWidth: 2, pointBackgroundColor: "rgba(106, 169, 244, 1)" }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { suggestedMin: 0, suggestedMax: 2, ticks: { stepSize: 0.5, color: "#aab4c2", backdropColor: "transparent" }, grid: { color: "rgba(170, 180, 194, 0.18)" }, angleLines: { color: "rgba(170, 180, 194, 0.18)" }, pointLabels: { color: "#e7ecf3", font: { size: 12 } } } } }
+  });
+  document.getElementById("axis-modal-bg").classList.add("open");
+}
+document.getElementById("axis-modal-close").addEventListener("click", () => document.getElementById("axis-modal-bg").classList.remove("open"));
+document.getElementById("axis-modal-bg").addEventListener("click", e => { if (e.target.id === "axis-modal-bg") document.getElementById("axis-modal-bg").classList.remove("open"); });
+
+if (DATA.recommendation) {
+  document.getElementById("recommend-lead").textContent = DATA.recommendation.lead || "";
+  document.getElementById("recommend-body").textContent = DATA.recommendation.body || "";
+  document.getElementById("recommend-quickwin").innerHTML = DATA.recommendation.quickwin ? "<b>Lowest-effort win:</b> " + DATA.recommendation.quickwin : "";
+}
+if (DATA.footer_note) document.getElementById("footer-note").innerHTML = DATA.footer_note;
+
+const firstCritical = DATA.domains.find(d => d.status === "missing") || DATA.domains[0];
+if (firstCritical) selectDomain(firstCritical.num);
+</script>
+</body>
+</html>
