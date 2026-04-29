@@ -9,7 +9,7 @@ This plugin is a growing collection of focused, reusable skills for the work acc
 This plugin is distributed through the Karbon marketplace. To install:
 
 ```
-/plugin marketplace add karbonhq/public-claude-skills
+/plugin marketplace add karbonhq/Public-Claude-Skills
 /plugin install karbon-claude-plugins@karbon-claude-plugins
 ```
 

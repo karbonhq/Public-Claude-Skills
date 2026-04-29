@@ -9,7 +9,7 @@ This repository is a Claude Code plugin marketplace. It currently distributes on
 In Claude Code:
 
 ```
-/plugin marketplace add karbonhq/public-claude-skills
+/plugin marketplace add karbonhq/Public-Claude-Skills
 /plugin install karbon-claude-plugins@karbon-claude-plugins
 ```
 
